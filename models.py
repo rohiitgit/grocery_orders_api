@@ -124,6 +124,23 @@ class OrderResponse(BaseModel):
             }
         }
 
+# Pagination Models
+class PaginatedResponse(BaseModel):
+    """Base model for paginated responses"""
+    items: List
+    total: int
+    page: int
+    size: int
+    pages: int
+
+class PaginatedProducts(PaginatedResponse):
+    """Paginated products response"""
+    items: List[Product]
+
+class PaginatedOrders(PaginatedResponse):
+    """Paginated orders response"""
+    items: List[OrderResponse]
+
 # Error Response Model
 class ErrorResponse(BaseModel):
     detail: str
