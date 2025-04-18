@@ -50,6 +50,19 @@ class ProductCreate(BaseModel):
             }
         }
 
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    price_per_unit: Optional[float] = Field(None, gt=0, description="Price must be positive")
+    unit: Optional[str] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "price_per_unit": 55.0,
+                "unit": "kg"
+            }
+        }
+
 class OrderCreate(BaseModel):
     customer_name: str
     items: List[OrderItem] = Field(..., min_items=1, description="Order must contain at least one item")

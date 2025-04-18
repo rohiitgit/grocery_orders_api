@@ -1,8 +1,8 @@
 from typing import List
 from fastapi import APIRouter, HTTPException, status
-from models import Product, ProductCreate, ErrorResponse
+from models import Product, ProductCreate, ProductUpdate, ErrorResponse
 from services.product_service import ProductService
-from utils.exceptions import ProductNameExistsError
+from utils.exceptions import ProductNameExistsError, ProductNotFoundError
 
 # Create router instance
 router = APIRouter(
@@ -55,6 +55,44 @@ def create_product(product: ProductCreate):
     """
     try:
         return product_service.create_product(product)
+    except ProductNameExistsError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=e.message
+        )
+
+@router.put(
+    "/{product_id}",
+    response_model=Product,
+    status_code=status.HTTP_200_OK,
+    summary="Update a product",
+    description="Update an existing product's information",
+    responses={
+        404: {"model": ErrorResponse, "description": "Product not found"},
+        409: {"model": ErrorResponse, "description": "Product with this name already exists"}
+    }
+)
+def update_product(product_id: int, product: ProductUpdate):
+    """
+    Update a product endpoint
+    
+    Args:
+        product_id (int): ID of the product to update
+        product (ProductUpdate): Updated product data
+        
+    Returns:
+        Product: Updated product
+        
+    Raises:
+        HTTPException: If product not found or name conflict
+    """
+    try:
+        return product_service.update_product(product_id, product)
+    except ProductNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message
+        )
     except ProductNameExistsError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

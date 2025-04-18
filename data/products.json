@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "name": "Rice",
+    "price_per_unit": 65.0,
+    "unit": "pound"
+  },
+  {
+    "id": 2,
+    "name": "Sugar",
+    "price_per_unit": 40.0,
+    "unit": "kg"
+  }
+]

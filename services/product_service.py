@@ -1,6 +1,12 @@
 from typing import List, Optional
-from models import Product, ProductCreate
+import os
+from models import Product, ProductCreate, ProductUpdate
 from utils.exceptions import ProductNotFoundError, ProductNameExistsError
+from utils.json_storage import JsonStorage
+
+# Define path for data files
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+PRODUCTS_FILE = os.path.join(DATA_DIR, "products.json")
 
 class ProductService:
     """Service for handling product operations"""
@@ -11,13 +17,16 @@ class ProductService:
         """Singleton pattern to ensure we always use the same instance"""
         if cls._instance is None:
             cls._instance = super(ProductService, cls).__new__(cls)
-            cls._instance._products = []  # In-memory storage
-            cls._instance._counter = 1    # ID counter
+            # Initialize JSON storage
+            cls._instance._storage = JsonStorage(PRODUCTS_FILE, Product)
+            # Initialize counter based on existing data
+            products = cls._instance._storage.read_all()
+            cls._instance._counter = max([p.id for p in products], default=0) + 1
         return cls._instance
     
     def get_all_products(self) -> List[Product]:
         """Get all products"""
-        return self._products.copy()
+        return self._storage.read_all()
     
     def get_product_by_id(self, product_id: int) -> Product:
         """Get a product by ID
@@ -31,10 +40,10 @@ class ProductService:
         Raises:
             ProductNotFoundError: If no product with the specified ID exists
         """
-        for product in self._products:
-            if product.id == product_id:
-                return product
-        raise ProductNotFoundError(product_id)
+        try:
+            return self._storage.get_by_id(product_id)
+        except ValueError:
+            raise ProductNotFoundError(product_id)
     
     def get_product_by_name(self, name: str) -> Optional[Product]:
         """Get a product by name
@@ -45,7 +54,8 @@ class ProductService:
         Returns:
             The product with the specified name, or None if no such product exists
         """
-        for product in self._products:
+        products = self._storage.read_all()
+        for product in products:
             if product.name.lower() == name.lower():  # Case-insensitive comparison
                 return product
         return None
@@ -77,6 +87,35 @@ class ProductService:
         
         # Increment counter and add to storage
         self._counter += 1
-        self._products.append(new_product)
+        self._storage.add_item(new_product)
         
         return new_product
+        
+    def update_product(self, product_id: int, product_data: ProductUpdate) -> Product:
+        """Update an existing product
+        
+        Args:
+            product_id: The ID of the product to update
+            product_data: The data to update the product with
+            
+        Returns:
+            The updated product
+            
+        Raises:
+            ProductNotFoundError: If no product with the specified ID exists
+            ProductNameExistsError: If the new name already exists for another product
+        """
+        # Check if product exists
+        self.get_product_by_id(product_id)
+        
+        # Check name uniqueness if name is provided
+        if product_data.name is not None:
+            existing_product = self.get_product_by_name(product_data.name)
+            if existing_product and existing_product.id != product_id:
+                raise ProductNameExistsError(product_data.name)
+        
+        try:
+            # Update product in storage
+            return self._storage.update_item(product_id, product_data.dict(exclude_unset=True))
+        except ValueError:
+            raise ProductNotFoundError(product_id)

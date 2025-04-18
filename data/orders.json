@@ -1,0 +1,16 @@
+[
+  {
+    "id": 101,
+    "customer_name": "Test Customer",
+    "items": [
+      {
+        "product_id": 1,
+        "quantity": 3
+      },
+      {
+        "product_id": 2,
+        "quantity": 2
+      }
+    ]
+  }
+]
